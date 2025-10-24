@@ -1,2 +1,2 @@
 # noda
-React project Noda
+React 프로젝트 Noda
