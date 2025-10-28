@@ -56,6 +56,7 @@ mongoose.set('strictQuery', false);
 require('./models/taxiSchema');
 require('./models/messageSchema');
 
+
 const app = express();
 const router = express.Router();
 
@@ -80,6 +81,9 @@ app.get('/api/health', healthHandler);
 require('./routers/taxiRouters')(app);
 require('./routers/messageRouters')(app);
 require('./routers/imageRouters')(app, router);
+require('./routers/messageFilesRouters')(app, router);
+
+
 
 // 운영에서만 정적 서빙(있을 때만)
 const isProd = process.env.NODE_ENV === 'production';

@@ -1,31 +1,67 @@
 // C:\VSCode\react\project\noda\src\pages\MessageSend.js
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from './MessageSend.module.scss';
 import messageService from '../../services/messageService';
+import messageFilesService from '../../services/messageFilesService';
 
 // why: datetime-local 기본값으로 사용(UTC 기준 단순 처리)
 function nowISO() {
-  return new Date().toISOString().slice(0, 16);
+  const kstMs = Date.now() + 9 * 60 * 60 * 1000;
+
+  return new Date(kstMs).toISOString().slice(0, 19);
 }
 
-const INITIAL = {
-  sender_id: '',
-  receiver_id: '',
-  subject: '',
-  content: '',
-  send_date: nowISO(),
-  read_date: '', // '' → null로 변환
-  reply: 0,
-  is_read: false,
-  is_deleted_by_sender: false,
-  is_deleted_by_receiver: false,
-  is_important: false,
-};
 
-export default function MessageSend() {
+
+export default function MessageSend(props) {
+
+  const INITIAL = {
+    sender_id: '',
+    receiver_id: props.compose.to,
+    subject: '',
+    content: '',
+    send_date: nowISO(),
+    read_date: '', // '' → null로 변환
+    reply: props.compose.replyToId,
+    is_read: false,
+    is_deleted_by_sender: false,
+    is_deleted_by_receiver: false,
+    is_important: false,
+  };
+
+
+
+
   const [form, setForm] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const [submitting,setSubmitting] = useState(false);
+
+  const [file, setFile] = useState([])
+  const changeFile= (evt) => {
+      const f = evt.target.files && evt.target.files[0];
+      if (!f) return;
+      setFile((prev) => [...prev, { id: uid(), file: f }]);
+      evt.target.value = ""; // 왜: 동일 파일 재선택 감지
+  }
+
+
+  //파일 여러 개 업로드
+  function uid() {
+    // 왜: key 충돌/삭제 안정성 위해 고유 ID 필요
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+  function removeFile(id) {
+    setFile((prev) => prev.filter((x) => x.id !== id));
+  }
+
+
+
+
+
+
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
@@ -43,13 +79,14 @@ export default function MessageSend() {
 
   function toPayload(values) {
     return {
+      ...values,
       // no: 서버에서 auto-increment
       sender_id: values.sender_id.trim(),
       receiver_id: values.receiver_id.trim(),
       subject: values.subject.trim(),
       content: values.content,
-      send_date: values.send_date ? new Date(values.send_date).toISOString() : undefined,
-      read_date: values.read_date ? new Date(values.read_date).toISOString() : null,
+      // send_date: values.send_date ? new Date(values.send_date).toISOString() : undefined,
+      // read_date: values.read_date ? new Date(values.read_date).toISOString() : null,
       reply: Number(values.reply || 0),
       is_read: Boolean(values.is_read),
       is_deleted_by_sender: Boolean(values.is_deleted_by_sender),
@@ -60,17 +97,48 @@ export default function MessageSend() {
 
 
 
+  const onCounter = async () => {
+    const value = await messageService.getMaxMessageNo()
+    setMaxNo(value)
+    return value;
+  }
+
   
+  const [maxNo, setMaxNo] = useState(0)
+  const [err, setErr] = useState('');
+
+
+
   
-  const onAdd = (payload) => {
-    messageService.addMessage(payload)
-    setForm(INITIAL)
+  const onAdd = async (payload) => {
+    try {
+      await messageService.addMessage(payload)
+      
+      
+      const currentNo = await messageService.getMaxMessageNo();
+
+      if (file) {
+        file.map(async ({ file }) => await messageFilesService.addFile(file, currentNo))
+        //await messageFilesService.addFile(file,currentNo)
+      }
+
+      setForm(INITIAL)
+      setFile([])
+      
+    } catch (e) {
+      console.error(e)
+      alert('처리 실패')
+    }
   }
 
 
   function onSubmit(e) {
     e.preventDefault();
-    const v = { ...form };
+
+    
+
+
+    const v = { ...form, send_date: nowISO()};
     const eobj = validate(v);
     setErrors(eobj);
     if (Object.keys(eobj).length) return;
@@ -83,10 +151,14 @@ export default function MessageSend() {
     onAdd(payload)
 
     console.log('[MessageSend] submit payload', payload);
-    alert('메세지 전송 요청이 콘솔에 출력되었습니다. (추후 API로 연동)');
+    alert(`${v.receiver_id}님에게 메일을 성공적으로 발송했습니다.`);
 
     setForm((f) => ({ ...INITIAL, sender_id: f.sender_id })); // why: 발신자 유지 편의
     setErrors({});
+
+
+    props.setCompose(false)
+    props.onData()
   }
 
   function onReset() {
@@ -96,8 +168,8 @@ export default function MessageSend() {
 
   function fillSample() {
     setForm({
-      sender_id: 'sender@noda.com',
-      receiver_id: 'receiver@noda.com',
+      sender_id: 'sender',
+      receiver_id: 'receiver',
       subject: '(Sample) 회의 안건 공유',
       content: '안녕하세요,\n오늘 16시에 회의실 A에서 진행합니다.\n안건: 릴리즈 계획, 인프라 개선.',
       send_date: nowISO(),
@@ -113,6 +185,7 @@ export default function MessageSend() {
   function onToggleRead(checked) {
     setForm((f) => ({
       ...f,
+      receiver_id: props.compose.to,
       is_read: checked,
       read_date: checked && !f.read_date ? nowISO() : checked ? f.read_date : '',
     }));
@@ -122,9 +195,9 @@ export default function MessageSend() {
     () => ({
       sender_id: '발신인 식별자(추후 FK 연동 예정)',
       receiver_id: '수신인 식별자(추후 FK 연동 예정)',
-      subject: '메세지 제목(최대 300자)',
-      content: '메세지 본문',
-      send_date: '발송 시각(기본: 현재)',
+      subject: '최대 300자',
+      content: '최대 2000자',
+      send_date: '여러 파일 업로드 가능',
       read_date: '읽은 시각(읽음 체크 시 자동 입력)',
       reply: '(추후 삭제 예정) 답장하려는 메세지의 no(Primary Key), 없으면 0',
     }),
@@ -137,7 +210,23 @@ export default function MessageSend() {
       <form className={styles.form} onSubmit={onSubmit} onReset={onReset}>
         {/* 필수 필드 */}
         <div className={styles.row}>
-          <label className={styles.label} htmlFor="sender_id">발신인 ID</label>
+          <div className={styles.rowInline}>
+            <label className={styles.label_sender} htmlFor="sender_id">발신인 ID</label>
+
+
+            <label className={styles.importance}>
+              <input
+                type="checkbox"
+                className={styles.importance_checkbox}
+                checked={form.is_important}
+                onChange={(e) => setField('is_important', e.target.checked)}
+              />
+              중요 메일
+            </label>
+          </div>
+          
+
+
           <input
             id="sender_id"
             className={`${styles.input} ${errors.sender_id ? styles.invalid : ''}`}
@@ -158,6 +247,7 @@ export default function MessageSend() {
             onChange={(e) => setField('receiver_id', e.target.value)}
             placeholder="수신자ID@noda.com"
           />
+            
           <div className={styles.help}>{helpText.receiver_id}</div>
           {errors.receiver_id && <div className={styles.error}>{errors.receiver_id}</div>}
         </div>
@@ -192,104 +282,72 @@ export default function MessageSend() {
           {errors.content && <div className={styles.error}>{errors.content}</div>}
         </div>
 
-        <div className={styles.rowInline}>
-          <div className={styles.row}>
-            <label className={styles.label} htmlFor="send_date">발송 시각</label>
-            <input
+        <div className={styles.rowInline_file}>
+          <div>
+            <label className={styles.label} htmlFor="send_date" style={{marginTop:'10px'}}>첨부 파일</label>
+            {/* <input
               id="send_date"
               type="datetime-local"
               className={styles.input}
               value={form.send_date}
               onChange={(e) => setField('send_date', e.target.value)}
-            />
-            <div className={styles.help}>{helpText.send_date}</div>
-          </div>
+            /> */}
 
-          <div className={styles.row}>
-            <label className={styles.label} htmlFor="reply">답장(원본 no)</label>
-            <input
-              id="reply"
-              type="number"
-              min={0}
+            <input 
+              type='file'
               className={styles.input}
-              value={form.reply}
-              onChange={(e) => setField('reply', e.target.value)}
-              
+              onChange={changeFile}
             />
-            <div className={styles.help}>{helpText.reply}</div>
+
+
+            <div className={styles.help}>{helpText.send_date}</div>
+
+            
           </div>
-        </div>
 
-        {/* 플래그 */}
-        <div className={styles.flags}>
-          <label className={styles.flag}>
-            <input
-              type="checkbox"
-              checked={form.is_important}
-              onChange={(e) => setField('is_important', e.target.checked)}
-            />
-            중요 표시
-          </label>
-          <label className={styles.flag}>
-            <input
-              type="checkbox"
-              checked={form.is_read}
-              onChange={(e) => onToggleRead(e.target.checked)}
-            />
-            읽음 처리
-          </label>
-          {/* <button
-            type="button"
-            className={styles.linkBtn}
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced ? '고급 옵션 숨기기' : '고급 옵션 보기'}
-          </button> */}
-        </div>
-
-        {/* 고급 옵션 */}
-        {showAdvanced && (
-          <div className={styles.advanced}>
-            <div className={styles.rowInline}>
-              <div className={styles.row}>
-                <label className={styles.label} htmlFor="read_date">읽은 시각</label>
-                <input
-                  id="read_date"
-                  type="datetime-local"
-                  className={styles.input}
-                  value={form.read_date}
-                  onChange={(e) => setField('read_date', e.target.value)}
-                  disabled={!form.is_read}
-                />
-                <div className={styles.help}>{helpText.read_date}</div>
-              </div>
-              <div className={styles.row}>
-                <label className={styles.label}>삭제 플래그</label>
-                <div className={styles.flagGroup}>
-                  <label className={styles.flag}>
-                    <input
-                      type="checkbox"
-                      checked={form.is_deleted_by_sender}
-                      onChange={(e) => setField('is_deleted_by_sender', e.target.checked)}
-                    />
-                    발신인 삭제
-                  </label>
-                  <label className={styles.flag}>
-                    <input
-                      type="checkbox"
-                      checked={form.is_deleted_by_receiver}
-                      onChange={(e) => setField('is_deleted_by_receiver', e.target.checked)}
-                    />
-                    수신인 삭제
-                  </label>
+          <div className={styles.row} style={{marginTop:'15px'}}>
+            
+            {file.length > 0 && (
+              <div>
+                <div className={styles.attachmentsHeader}>
+                  파일 리스트 ({file.length}개)
                 </div>
+                <ul className={styles.attachmentsList}>
+                  {file.map(({ id, file }, idx) => (
+                    <li
+                      key={id}
+                      className={styles.attachmentsItem}
+                    >
+                      <div className={styles.attachmentsMeta}>
+                        <div className={styles.attachmentsName}>
+                          {file.name}
+                        </div>
+                        <div className={styles.attachmentsSubtext}>
+                          {/* {file.type || "unknown"} · {bytesToHuman(file.size)} */}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.dangerBtn}
+                        onClick={() => removeFile(id)}
+                        aria-label="파일 삭제"
+                        title="파일 삭제"
+                      >
+                        삭제
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
+
+        
+        
 
         {/* 액션 */}
-        <div className={styles.actions}>
+        <div className={styles.actions} style={{marginTop:'40px'}}>
           <button type="submit" className={styles.primaryBtn}>보내기</button>
           <button type="reset" className={styles.neutralBtn}>초기화</button>
           <button type="button" className={styles.neutralBtn} onClick={fillSample}>
@@ -299,10 +357,10 @@ export default function MessageSend() {
       </form>
 
       {/* 디버그 미리보기 (개발 편의) */}
-      <details className={styles.preview}>
+      {/* <details className={styles.preview}>
         <summary>현재 입력값(JSON 미리보기)</summary>
         <pre>{JSON.stringify(toPayload(form), null, 2)}</pre>
-      </details>
+      </details> */}
     </div>
   );
 }
