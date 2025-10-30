@@ -198,16 +198,7 @@ const Sidebar = (props) => {
 
 
 
-          {/* 임의 추가 */}
-        <LinksGroup
-          onActiveSidebarItemChange={activeItem => props.dispatch(changeActiveSidebarItem(activeItem))}
-          activeItem={props.activeItem}
-          header="고객 추가"
-          isHeader
-          iconName={<i className="eva eva-person-add-outline"/>}
-          link={"/template/customer"}
-          index="calendar"
-        />
+        {/* 임의 추가 */}
         <LinksGroup
           onActiveSidebarItemChange={activeItem => props.dispatch(changeActiveSidebarItem(activeItem))}
           activeItem={props.activeItem}

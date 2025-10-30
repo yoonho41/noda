@@ -1,50 +1,3 @@
-// // project/server.js
-// const express = require('express');
-// const http = require('http');
-// const mongoose = require('mongoose');
-// const path = require('path');
-// const fs = require('fs');
-// const { createProxyMiddleware } = require('http-proxy-middleware'); // why: dev에서 8080→3000 프록시
-
-// mongoose.set('strictQuery', false);
-// require('./models/taxiSchema');
-
-// const app = express();
-// const router = express.Router();
-
-// app.set('port', process.env.PORT || 8080);
-// app.use(express.static('uploads'));
-// app.use(express.json());
-
-// // DB 연결
-// mongoose.connect('mongodb://192.168.0.61:27017/nodaDB');
-// console.log('데이터베이스 연결');
-
-// // 디버그 로그(경로 확인)
-// app.use((req, _res, next) => {
-//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-//   next();
-// });
-
-// // 헬스체크
-// const healthHandler = (_req, res) => res.json({ ok: true, ts: Date.now() });
-// app.get('/health', healthHandler);
-// app.get('/api/health', healthHandler);
-
-// // 라우터 등록(기존 유지)
-// require('./routers/taxiRouters')(app);
-// require('./routers/imageRouters')(app, router);
-
-
-
-// // 서버 시작
-// http.createServer(app).listen(app.get('port'), () => {
-//   console.log('서버를 시작했습니다 : ' + app.get('port'));
-// });
-
-
-
-
 // C:\VSCode\react\project\server.js  (보수 패치: 동작 동일, 가시성↑)
 const express = require('express');
 const http = require('http');
@@ -53,7 +6,6 @@ const path = require('path');
 const fs = require('fs');
 
 mongoose.set('strictQuery', false);
-require('./models/taxiSchema');
 require('./models/messageSchema');
 require('./models/reservationSchema');
 
@@ -67,21 +19,11 @@ app.set('port', PORT);
 app.use(express.static('uploads'));
 app.use(express.json());
 
-// 요청 로깅
-// app.use((req, _res, next) => {
-//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-//   next();
-// });
 
-// 헬스체크(둘 다 허용)
-const healthHandler = (_req, res) => res.json({ ok: true, ts: Date.now() });
-app.get('/health', healthHandler);
-app.get('/api/health', healthHandler);
+
 
 // 라우터(기존 유지)
-require('./routers/taxiRouters')(app);
 require('./routers/messageRouters')(app);
-require('./routers/imageRouters')(app, router);
 require('./routers/messageFilesRouters')(app, router);
 require('./routers/reservationRouters')(app);
 
