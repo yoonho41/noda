@@ -54,6 +54,7 @@ import s from "./Layout.module.scss";
 import Customer from "../../customer/Customer";
 import Message from "../../pages/message/Message";
 import MessageSend from "../../pages/message/MessageSend";
+import Reservation from "../../pages/reservation/Reservation";
 
 
 
@@ -88,6 +89,9 @@ const Layout = (props) => {
             <Route path="/template/customer" exact component={Customer} />
             <Route path="/template/message" exact component={Message} />
             <Route path="/template/messageSend" exact component={MessageSend} />
+            <Route path="/template/reservation" exact component={Reservation} />
+
+
 
             <Route path="/template/tables" exact component={Tables} />
             <Route path="/template/ui-elements" exact render={() => <Redirect to={"/template/ui-elements/alerts"} />} />

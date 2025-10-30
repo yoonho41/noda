@@ -55,6 +55,7 @@ const fs = require('fs');
 mongoose.set('strictQuery', false);
 require('./models/taxiSchema');
 require('./models/messageSchema');
+require('./models/reservationSchema');
 
 
 const app = express();
@@ -82,6 +83,7 @@ require('./routers/taxiRouters')(app);
 require('./routers/messageRouters')(app);
 require('./routers/imageRouters')(app, router);
 require('./routers/messageFilesRouters')(app, router);
+require('./routers/reservationRouters')(app);
 
 
 

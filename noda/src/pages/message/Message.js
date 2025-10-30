@@ -280,13 +280,13 @@ export default function Message() {
   }
 
   function onRowClick(m) {
-    
+
+    setFileId([])
+
     setReadingId(m.id);
 
     onFileList(m.id)
     
-    
-
     onRead(m.id)
 
 

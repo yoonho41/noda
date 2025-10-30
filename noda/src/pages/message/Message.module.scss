@@ -17,6 +17,7 @@
   padding: 16px;
   background: var(--bg);
   color: var(--text);
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Pretendard-Regular, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,  sans-serif !important;
 }
 
 .toolbar {
@@ -185,7 +186,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   margin: 0;
   padding: 16px;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Pretendard-Regular, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,  sans-serif !important;
   background: var(--bg);
   padding-bottom: 300px;
 }
@@ -197,12 +198,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   margin: 10px;
   padding: 16px;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Pretendard-Regular, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,  sans-serif !important;
   // background: var(--bg);
   font-size: 10pt;
 }
 
-
+input[type=checkbox] {
+  -webkit-transform: scale(1.75); /* Safari and Chrome */
+  
+}
 
 
 /* 반응형 */

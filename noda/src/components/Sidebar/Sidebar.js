@@ -204,7 +204,7 @@ const Sidebar = (props) => {
           activeItem={props.activeItem}
           header="고객 추가"
           isHeader
-          iconName={<i className="eva eva-calendar-outline"/>}
+          iconName={<i className="eva eva-person-add-outline"/>}
           link={"/template/customer"}
           index="calendar"
         />
@@ -213,11 +213,19 @@ const Sidebar = (props) => {
           activeItem={props.activeItem}
           header="메세지"
           isHeader
-          iconName={<i className="eva eva-calendar-outline"/>}
+          iconName={<i className="eva eva-email-outline"/>}
           link={"/template/message"}
           index="calendar"
         />
-
+        <LinksGroup
+          onActiveSidebarItemChange={activeItem => props.dispatch(changeActiveSidebarItem(activeItem))}
+          activeItem={props.activeItem}
+          header="회의실 예약"
+          isHeader
+          iconName={<i className="eva eva-monitor-outline"/>}
+          link={"/template/reservation"}
+          index="calendar"
+        />
 
 
         <LinksGroup
