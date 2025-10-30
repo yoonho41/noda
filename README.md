@@ -21,7 +21,7 @@ React 프로젝트 Noda
    
 8. noda > src > components > Sidebar > Sidebar.js > line 201~219 추가
 
-9. noda > src > components > Layout > Layout.js > line 54-55, 87-88 추가
+9. noda > src > components > Layout > Layout.js > line 54, 56, 88-89 추가 (중간에 messageSend는 필요없는건데 실수로 안 없애고 올림)
 
 
 
