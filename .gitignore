@@ -1,1 +1,4 @@
 /noda/node_modules/
+.env
+.env.local
+/server/.env
